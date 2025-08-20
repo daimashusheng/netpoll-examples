@@ -21,5 +21,6 @@ package codec
  * Body:   length bytes
  */
 type Message struct {
+	Id      uint64
 	Message string
 }

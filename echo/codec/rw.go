@@ -25,8 +25,11 @@ import (
 // Encode .
 func Encode(writer netpoll.Writer, msg *Message) (err error) {
 	header, _ := writer.Malloc(4)
-	binary.BigEndian.PutUint32(header, uint32(len(msg.Message)))
+	binary.BigEndian.PutUint32(header, uint32(len(msg.Message)+8))
 
+	buf := make([]byte, 8)
+	binary.BigEndian.PutUint64(buf, msg.Id)
+	writer.WriteBinary(buf)
 	writer.WriteString(msg.Message)
 	err = writer.Flush()
 	return err
@@ -40,7 +43,12 @@ func Decode(reader netpoll.Reader, msg *Message) (err error) {
 	}
 	l := int(binary.BigEndian.Uint32(bLen))
 
-	msg.Message, err = reader.ReadString(l)
+	buf, err := reader.ReadBinary(8)
+	if err != nil {
+		return err
+	}
+	msg.Id = binary.BigEndian.Uint64(buf)
+	msg.Message, err = reader.ReadString(l - 8)
 	if err != nil {
 		return err
 	}

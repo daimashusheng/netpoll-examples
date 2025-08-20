@@ -29,19 +29,40 @@ import (
 	"github.com/cloudwego/netpoll-examples/echo/codec"
 )
 
+var (
+	reqID  = uint64(0)
+	sameID = uint64(0)
+	diffID = uint64(0)
+)
+
 func main() {
 	network, address := "tcp", "127.0.0.1:8080"
 
 	// new mux client
 	cli := newMuxClient(network, address, 4)
-	req := &codec.Message{
-		Message: "hello world",
+	for i := 0; i < 10; i++ {
+		go RunReq(cli)
 	}
-	resp, err := cli.Echo(req)
-	if err != nil {
-		panic(err)
+	RunReq(cli)
+}
+
+func RunReq(cli *muxclient) {
+	for {
+		req := &codec.Message{
+			Id:      atomic.AddUint64(&reqID, 1),
+			Message: "hello world",
+		}
+		resp, err := cli.Echo(req)
+		if err != nil {
+			panic(err)
+		}
+		if req.Id != resp.Id {
+			atomic.AddUint64(&diffID, 1)
+		} else {
+			atomic.AddUint64(&sameID, 1)
+		}
+		fmt.Printf("packet id same:%d, diff:%d\n", atomic.LoadUint64(&sameID), atomic.LoadUint64(&diffID))
 	}
-	println(resp)
 }
 
 func newMuxClient(network, address string, size int) *muxclient {

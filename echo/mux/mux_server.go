@@ -79,6 +79,7 @@ func handle(ctx context.Context, conn netpoll.Connection) (err error) {
 		}
 
 		// handler
+		//reqId := req.Id
 		resp := req
 
 		// encode
@@ -90,6 +91,7 @@ func handle(ctx context.Context, conn netpoll.Connection) (err error) {
 		mc.Put(func() (buf netpoll.Writer, isNil bool) {
 			return writer, false
 		})
+		//fmt.Printf("req id:%d, resp id:%d\n", reqId, resp.Id)
 	}()
 	return nil
 }
